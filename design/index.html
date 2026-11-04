@@ -1,0 +1,1163 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#ffffff" />
+    <title>DevSpace — Learn, Build, Share</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { sans: ["Inter", "sans-serif"] },
+            colors: {
+              brand: {
+                50: "#eef2ff",
+                100: "#e0e7ff",
+                500: "#6366f1",
+                600: "#4f46e5",
+                700: "#4338ca",
+                900: "#25245c",
+              },
+            },
+            boxShadow: { soft: "0 12px 40px rgba(15,23,42,.06)" },
+          },
+        },
+      };
+    </script>
+    <style>
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        font-family: Inter, sans-serif;
+      }
+      .hero-grid {
+        background-image: radial-gradient(
+          circle at 1px 1px,
+          rgba(99, 102, 241, 0.13) 1px,
+          transparent 0
+        );
+        background-size: 24px 24px;
+      }
+      .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .product-card {
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+      .product-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 18px 45px rgba(15, 23, 42, 0.09);
+      }
+    </style>
+  </head>
+  <body class="bg-white text-slate-900 antialiased">
+    <!-- Navigation -->
+    <header
+      class="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl"
+    >
+      <nav
+        class="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-5 lg:px-8"
+      >
+        <a href="#" class="flex items-center gap-2.5">
+          <span
+            class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              class="h-5 w-5"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="m4 7 8-4 8 4-8 4-8-4Z" />
+              <path d="m4 12 8 4 8-4M4 17l8 4 8-4" />
+            </svg>
+          </span>
+          <span class="text-lg font-extrabold tracking-tight"
+            >dev<span class="text-brand-600">space</span></span
+          >
+        </a>
+
+        <div
+          class="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex"
+        >
+          <a href="#courses" class="transition hover:text-brand-600">Kelas</a>
+          <a href="#products" class="transition hover:text-brand-600"
+            >Source Code</a
+          >
+          <a href="#categories" class="transition hover:text-brand-600"
+            >Kategori</a
+          >
+          <a href="#about" class="transition hover:text-brand-600">Tentang</a>
+        </div>
+
+        <div class="hidden items-center gap-3 md:flex">
+          <a
+            href="#"
+            class="rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+            >Masuk</a
+          >
+          <a
+            href="#"
+            class="rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
+            >Daftar Gratis</a
+          >
+        </div>
+
+        <button
+          id="menuButton"
+          class="rounded-lg p-2 text-slate-700 hover:bg-slate-100 md:hidden"
+          aria-label="Buka menu"
+        >
+          <svg
+            class="h-6 w-6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            viewBox="0 0 24 24"
+          >
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+        </button>
+      </nav>
+      <div
+        id="mobileMenu"
+        class="hidden border-t border-slate-100 bg-white px-5 py-4 md:hidden"
+      >
+        <div class="flex flex-col gap-4 text-sm font-medium text-slate-700">
+          <a href="#courses">Kelas</a><a href="#products">Source Code</a
+          ><a href="#categories">Kategori</a><a href="#about">Tentang</a>
+          <div class="flex gap-3 pt-2">
+            <a
+              href="#"
+              class="flex-1 rounded-xl border border-slate-200 py-2.5 text-center"
+              >Masuk</a
+            ><a
+              href="#"
+              class="flex-1 rounded-xl bg-brand-600 py-2.5 text-center text-white"
+              >Daftar Gratis</a
+            >
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- Hero -->
+      <section
+        class="relative overflow-hidden bg-gradient-to-b from-indigo-50/80 via-white to-white"
+      >
+        <div class="hero-grid absolute inset-0 opacity-70"></div>
+        <div
+          class="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-indigo-200/30 blur-3xl"
+        ></div>
+        <div
+          class="relative mx-auto grid max-w-7xl items-center gap-12 px-5 pb-20 pt-16 lg:grid-cols-[1.05fr_.95fr] lg:px-8 lg:pb-28 lg:pt-24"
+        >
+          <div>
+            <div
+              class="mb-6 inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-white/80 px-3.5 py-2 text-xs font-semibold text-brand-700 shadow-sm"
+            >
+              <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+              Ruang belajar dan berkarya untuk developer
+            </div>
+            <h1
+              class="max-w-2xl text-4xl font-extrabold leading-[1.12] tracking-tight text-slate-950 sm:text-5xl lg:text-[58px]"
+            >
+              Belajar lebih jauh.<br /><span class="text-brand-600"
+                >Bangun sesuatu</span
+              ><br />yang berarti.
+            </h1>
+            <p
+              class="mt-6 max-w-xl text-base leading-8 text-slate-600 sm:text-lg"
+            >
+              Temukan kelas teknologi, source code, dan tools pilihan untuk
+              membantumu belajar, membangun project, dan berkembang sebagai
+              developer.
+            </p>
+
+            <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+              <a
+                href="#courses"
+                class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:-translate-y-0.5 hover:bg-brand-700"
+              >
+                Mulai eksplorasi <span aria-hidden="true">→</span>
+              </a>
+              <a
+                href="#products"
+                class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-3.5 text-sm font-semibold text-slate-700 transition hover:border-brand-200 hover:text-brand-700"
+              >
+                Jelajahi source code
+              </a>
+            </div>
+
+            <div
+              class="mt-10 flex flex-wrap items-center gap-x-7 gap-y-3 text-sm text-slate-500"
+            >
+              <span class="flex items-center gap-2"
+                ><span class="text-emerald-600">✓</span> Banyak konten
+                gratis</span
+              >
+              <span class="flex items-center gap-2"
+                ><span class="text-emerald-600">✓</span> Belajar berbasis
+                project</span
+              >
+              <span class="flex items-center gap-2"
+                ><span class="text-emerald-600">✓</span> Akses produk
+                selamanya*</span
+              >
+            </div>
+          </div>
+
+          <div class="relative mx-auto w-full max-w-xl">
+            <div
+              class="absolute -left-5 top-12 h-28 w-28 rounded-full bg-purple-200/60 blur-2xl"
+            ></div>
+            <div
+              class="absolute -bottom-8 -right-4 h-40 w-40 rounded-full bg-blue-200/60 blur-3xl"
+            ></div>
+            <div
+              class="relative rounded-3xl border border-slate-200 bg-white p-3 shadow-2xl shadow-indigo-900/10"
+            >
+              <div
+                class="flex items-center justify-between border-b border-slate-100 px-3 pb-3"
+              >
+                <div class="flex items-center gap-2">
+                  <span class="h-2.5 w-2.5 rounded-full bg-rose-400"></span
+                  ><span class="h-2.5 w-2.5 rounded-full bg-amber-400"></span
+                  ><span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
+                </div>
+                <span class="text-[11px] font-medium text-slate-400"
+                  >devspace / explore</span
+                >
+                <span class="w-10"></span>
+              </div>
+              <div class="p-3 sm:p-5">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-xs font-medium text-slate-400">
+                      YOUR LEARNING SPACE
+                    </p>
+                    <h3 class="mt-1 text-lg font-bold">
+                      Explore something new
+                    </h3>
+                  </div>
+                  <div class="rounded-xl bg-indigo-50 p-2.5 text-brand-600">
+                    <svg
+                      class="h-5 w-5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                    >
+                      <path
+                        d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1"
+                      />
+                      <circle cx="12" cy="12" r="4" />
+                    </svg>
+                  </div>
+                </div>
+                <div
+                  class="mt-5 rounded-2xl bg-slate-950 p-4 text-white sm:p-5"
+                >
+                  <div class="flex items-center justify-between">
+                    <span
+                      class="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-semibold text-indigo-200"
+                      >FEATURED COURSE</span
+                    ><span class="text-xs text-slate-400">01 / 06</span>
+                  </div>
+                  <div class="mt-5 font-mono text-xs leading-6 text-indigo-200">
+                    <span class="text-purple-300">const</span> developer = {<br />
+                    &nbsp;&nbsp;learn:
+                    <span class="text-emerald-300">"everyday"</span>,<br />
+                    &nbsp;&nbsp;build:
+                    <span class="text-emerald-300">"something great"</span
+                    >,<br />
+                    &nbsp;&nbsp;share: <span class="text-emerald-300">true</span
+                    ><br />
+                    };
+                  </div>
+                  <div class="mt-5">
+                    <p class="text-lg font-bold">Golang Backend Development</p>
+                    <p class="mt-1 text-xs text-slate-400">
+                      Bangun REST API dari dasar hingga siap dikembangkan.
+                    </p>
+                  </div>
+                  <div class="mt-4 flex items-center justify-between">
+                    <span class="text-xs text-slate-400"
+                      >12 lessons · Project based</span
+                    ><span
+                      class="rounded-lg bg-white px-3 py-2 text-xs font-bold text-slate-900"
+                      >Lihat kelas →</span
+                    >
+                  </div>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-3">
+                  <div class="rounded-xl border border-slate-100 p-3">
+                    <div class="flex items-center gap-2">
+                      <span
+                        class="rounded-lg bg-emerald-50 p-2 text-emerald-600"
+                        >⌘</span
+                      ><span class="text-[11px] font-semibold text-slate-500"
+                        >SOURCE CODE</span
+                      >
+                    </div>
+                    <p class="mt-3 text-sm font-bold">Laravel API Starter</p>
+                    <p class="mt-1 text-xs text-emerald-600">
+                      Pay what you want
+                    </p>
+                  </div>
+                  <div class="rounded-xl border border-slate-100 p-3">
+                    <div class="flex items-center gap-2">
+                      <span class="rounded-lg bg-amber-50 p-2 text-amber-600"
+                        >▶</span
+                      ><span class="text-[11px] font-semibold text-slate-500"
+                        >FREE COURSE</span
+                      >
+                    </div>
+                    <p class="mt-3 text-sm font-bold">Linux Fundamental</p>
+                    <p class="mt-1 text-xs text-slate-500">Start learning</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div
+              class="absolute -right-5 top-24 hidden rounded-2xl border border-slate-100 bg-white px-4 py-3 shadow-soft sm:block"
+            >
+              <div class="flex items-center gap-2">
+                <span
+                  class="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600"
+                  >✓</span
+                >
+                <div>
+                  <p class="text-xs font-bold">Keep building</p>
+                  <p class="text-[10px] text-slate-400">One step at a time</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Search -->
+      <section class="relative z-10 mx-auto -mt-8 max-w-5xl px-5">
+        <div
+          class="rounded-2xl border border-slate-200 bg-white p-3 shadow-soft sm:p-4"
+        >
+          <form id="searchForm" class="flex flex-col gap-3 sm:flex-row">
+            <div class="flex flex-1 items-center gap-3 px-2">
+              <svg
+                class="h-5 w-5 shrink-0 text-slate-400"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path d="m20 20-4-4" />
+              </svg>
+              <input
+                id="searchInput"
+                type="search"
+                placeholder="Cari kelas, source code, atau teknologi..."
+                class="w-full border-0 bg-transparent py-2 text-sm outline-none placeholder:text-slate-400 focus:ring-0"
+              />
+            </div>
+            <button
+              class="rounded-xl bg-brand-600 px-7 py-3 text-sm font-semibold text-white transition hover:bg-brand-700"
+              type="submit"
+            >
+              Cari sekarang
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <!-- Categories -->
+      <section id="categories" class="mx-auto max-w-7xl px-5 py-20 lg:px-8">
+        <div
+          class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"
+        >
+          <div>
+            <p class="text-sm font-semibold text-brand-600">
+              EXPLORE BY CATEGORY
+            </p>
+            <h2 class="mt-2 text-3xl font-bold tracking-tight">
+              Temukan bidang yang kamu minati
+            </h2>
+            <p class="mt-3 text-slate-500">
+              Mulai dari fundamental hingga skill yang siap diterapkan.
+            </p>
+          </div>
+          <a
+            href="#courses"
+            class="text-sm font-semibold text-brand-600 hover:text-brand-700"
+            >Lihat semua kategori →</a
+          >
+        </div>
+        <div class="mt-9 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          <a
+            href="#courses"
+            class="group rounded-2xl border border-slate-200 p-5 transition hover:border-indigo-200 hover:bg-indigo-50/50"
+            ><span
+              class="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-xl text-brand-600"
+              >⌘</span
+            >
+            <h3 class="mt-4 font-bold">Backend Development</h3>
+            <p class="mt-1 text-xs text-slate-500">API, server & database</p></a
+          >
+          <a
+            href="#courses"
+            class="group rounded-2xl border border-slate-200 p-5 transition hover:border-indigo-200 hover:bg-indigo-50/50"
+            ><span
+              class="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-50 text-xl text-sky-600"
+              >◇</span
+            >
+            <h3 class="mt-4 font-bold">Frontend Development</h3>
+            <p class="mt-1 text-xs text-slate-500">Web & modern UI</p></a
+          >
+          <a
+            href="#courses"
+            class="group rounded-2xl border border-slate-200 p-5 transition hover:border-indigo-200 hover:bg-indigo-50/50"
+            ><span
+              class="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-50 text-xl text-violet-600"
+              >▣</span
+            >
+            <h3 class="mt-4 font-bold">Mobile Development</h3>
+            <p class="mt-1 text-xs text-slate-500">Android & iOS apps</p></a
+          >
+          <a
+            href="#courses"
+            class="group rounded-2xl border border-slate-200 p-5 transition hover:border-indigo-200 hover:bg-indigo-50/50"
+            ><span
+              class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-xl text-emerald-600"
+              >⌁</span
+            >
+            <h3 class="mt-4 font-bold">DevOps & Cloud</h3>
+            <p class="mt-1 text-xs text-slate-500">
+              Infrastructure & automation
+            </p></a
+          >
+          <a
+            href="#courses"
+            class="group rounded-2xl border border-slate-200 p-5 transition hover:border-indigo-200 hover:bg-indigo-50/50"
+            ><span
+              class="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-50 text-xl text-rose-600"
+              >⛨</span
+            >
+            <h3 class="mt-4 font-bold">Cybersecurity</h3>
+            <p class="mt-1 text-xs text-slate-500">Security & pentesting</p></a
+          >
+          <a
+            href="#courses"
+            class="group rounded-2xl border border-slate-200 p-5 transition hover:border-indigo-200 hover:bg-indigo-50/50"
+            ><span
+              class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-50 text-xl text-amber-600"
+              >▤</span
+            >
+            <h3 class="mt-4 font-bold">Database & System</h3>
+            <p class="mt-1 text-xs text-slate-500">Data & architecture</p></a
+          >
+          <a
+            href="#products"
+            class="group rounded-2xl border border-slate-200 p-5 transition hover:border-indigo-200 hover:bg-indigo-50/50"
+            ><span
+              class="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-xl text-orange-600"
+              >✳</span
+            >
+            <h3 class="mt-4 font-bold">UI/UX & Design</h3>
+            <p class="mt-1 text-xs text-slate-500">Interface & experience</p></a
+          >
+          <a
+            href="#products"
+            class="group rounded-2xl border border-dashed border-slate-300 p-5 transition hover:border-brand-300 hover:bg-indigo-50/50"
+            ><span
+              class="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-xl text-slate-600"
+              >＋</span
+            >
+            <h3 class="mt-4 font-bold">Lihat lainnya</h3>
+            <p class="mt-1 text-xs text-slate-500">Jelajahi semua topik</p></a
+          >
+        </div>
+      </section>
+
+      <!-- Courses -->
+      <section id="courses" class="bg-slate-50 py-20">
+        <div class="mx-auto max-w-7xl px-5 lg:px-8">
+          <div
+            class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"
+          >
+            <div>
+              <p class="text-sm font-semibold text-brand-600">
+                LEARN SOMETHING NEW
+              </p>
+              <h2 class="mt-2 text-3xl font-bold tracking-tight">
+                Kelas pilihan untuk berkembang
+              </h2>
+              <p class="mt-3 text-slate-500">
+                Belajar dengan materi terstruktur dan project yang bisa kamu
+                praktikkan.
+              </p>
+            </div>
+            <a
+              href="#"
+              class="text-sm font-semibold text-brand-600 hover:text-brand-700"
+              >Jelajahi semua kelas →</a
+            >
+          </div>
+          <div class="mt-8 flex flex-wrap gap-2" id="courseFilters">
+            <button
+              data-filter="all"
+              class="filter-btn rounded-full bg-brand-600 px-4 py-2 text-xs font-semibold text-white"
+            >
+              Semua kelas
+            </button>
+            <button
+              data-filter="free"
+              class="filter-btn rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 hover:border-brand-200"
+            >
+              Gratis
+            </button>
+            <button
+              data-filter="paid"
+              class="filter-btn rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 hover:border-brand-200"
+            >
+              Berbayar
+            </button>
+          </div>
+          <div
+            id="courseGrid"
+            class="mt-7 grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            <article
+              class="product-card course-card overflow-hidden rounded-2xl border border-slate-200 bg-white"
+              data-type="free"
+              data-search="linux fundamental linux server operating system"
+            >
+              <div
+                class="relative h-48 overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-6 text-white"
+              >
+                <span
+                  class="rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-bold tracking-wide text-emerald-300"
+                  >FREE COURSE</span
+                >
+                <div class="mt-5 font-mono text-sm leading-7 text-slate-300">
+                  <span class="text-emerald-300">$</span> sudo apt update<br /><span
+                    class="text-emerald-300"
+                    >$</span
+                  >
+                  learn linux<br /><span class="text-indigo-300"
+                    ># start your journey</span
+                  >
+                </div>
+                <span
+                  class="absolute bottom-5 right-6 text-5xl font-bold text-white/10"
+                  >LINUX</span
+                >
+              </div>
+              <div class="p-5">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-medium text-slate-500"
+                    >DevOps & Cloud</span
+                  ><span
+                    class="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700"
+                    >Gratis</span
+                  >
+                </div>
+                <h3 class="mt-3 text-lg font-bold">
+                  Linux Fundamental untuk Pemula
+                </h3>
+                <p class="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">
+                  Kenali command line, file system, permission, package manager,
+                  dan dasar administrasi Linux.
+                </p>
+                <div
+                  class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4 text-xs text-slate-500"
+                >
+                  <span>8 materi · Beginner</span
+                  ><span class="font-semibold text-slate-900">Rp0</span>
+                </div>
+              </div>
+            </article>
+            <article
+              class="product-card course-card overflow-hidden rounded-2xl border border-slate-200 bg-white"
+              data-type="paid"
+              data-search="golang backend development rest api"
+            >
+              <div
+                class="relative h-48 overflow-hidden bg-gradient-to-br from-cyan-950 via-slate-900 to-blue-950 p-6 text-white"
+              >
+                <span
+                  class="rounded-full bg-white/10 px-3 py-1.5 text-[10px] font-bold tracking-wide text-sky-200"
+                  >PREMIUM COURSE</span
+                >
+                <div class="mt-7 flex items-center gap-3">
+                  <span class="text-5xl font-extrabold text-cyan-300">Go</span>
+                  <div class="font-mono text-xs leading-5 text-slate-300">
+                    func main() {<br />&nbsp; buildAPI()<br />}
+                  </div>
+                </div>
+                <div class="mt-4 h-1.5 w-2/3 rounded-full bg-white/10">
+                  <div class="h-1.5 w-2/3 rounded-full bg-cyan-400"></div>
+                </div>
+              </div>
+              <div class="p-5">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-medium text-slate-500"
+                    >Backend Development</span
+                  ><span
+                    class="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-semibold text-brand-700"
+                    >Premium</span
+                  >
+                </div>
+                <h3 class="mt-3 text-lg font-bold">
+                  Golang Backend Development
+                </h3>
+                <p class="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">
+                  Bangun REST API menggunakan Go, PostgreSQL, authentication,
+                  testing, dan clean architecture.
+                </p>
+                <div
+                  class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4 text-xs text-slate-500"
+                >
+                  <span>24 materi · Intermediate</span
+                  ><span class="font-bold text-slate-900">Rp149.000</span>
+                </div>
+              </div>
+            </article>
+            <article
+              class="product-card course-card overflow-hidden rounded-2xl border border-slate-200 bg-white"
+              data-type="free"
+              data-search="docker fundamental container devops"
+            >
+              <div
+                class="relative h-48 overflow-hidden bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-800 p-6 text-white"
+              >
+                <span
+                  class="rounded-full bg-white/15 px-3 py-1.5 text-[10px] font-bold tracking-wide"
+                  >PAY WHAT YOU WANT</span
+                >
+                <div class="mt-6 flex items-center gap-4">
+                  <svg
+                    class="h-14 w-14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.3"
+                  >
+                    <path
+                      d="M2 12h20M4 8h3v4H4zm4-4h3v4H8zm4 4h3v4h-3zm4 0h3v4h-3zM6 16h12"
+                    />
+                  </svg>
+                  <div>
+                    <p class="text-xl font-bold">Docker</p>
+                    <p class="text-xs text-blue-100">Container essentials</p>
+                  </div>
+                </div>
+              </div>
+              <div class="p-5">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-medium text-slate-500"
+                    >DevOps & Cloud</span
+                  ><span
+                    class="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-semibold text-violet-700"
+                    >PWYW</span
+                  >
+                </div>
+                <h3 class="mt-3 text-lg font-bold">Docker Fundamental</h3>
+                <p class="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">
+                  Pelajari image, container, volume, network, dan Docker Compose
+                  melalui praktik langsung.
+                </p>
+                <div
+                  class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4 text-xs text-slate-500"
+                >
+                  <span>10 materi · Beginner</span
+                  ><span class="font-bold text-emerald-600">Mulai Rp0</span>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- PWYW products -->
+      <section id="products" class="mx-auto max-w-7xl px-5 py-20 lg:px-8">
+        <div
+          class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"
+        >
+          <div>
+            <p class="text-sm font-semibold text-emerald-600">
+              SHARE & SUPPORT
+            </p>
+            <h2 class="mt-2 text-3xl font-bold tracking-tight">
+              Ilmu dan tools, terbuka untuk semua
+            </h2>
+            <p class="mt-3 max-w-2xl text-slate-500">
+              Ambil yang kamu butuhkan secara gratis. Jika bermanfaat, kamu bisa
+              mendukung pembuatnya dengan nominal pilihanmu.
+            </p>
+          </div>
+          <a
+            href="#"
+            class="text-sm font-semibold text-brand-600 hover:text-brand-700"
+            >Lihat semua produk →</a
+          >
+        </div>
+        <div class="mt-9 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <article
+            class="product-card overflow-hidden rounded-2xl border border-slate-200 bg-white"
+          >
+            <div
+              class="flex h-44 items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700"
+            >
+              <div
+                class="rounded-xl border border-white/15 bg-white/5 p-5 font-mono text-sm leading-7 text-emerald-300 shadow-2xl"
+              >
+                <span class="text-slate-400">routes/</span>api.php<br /><span
+                  class="text-purple-300"
+                  >Route</span
+                >::get(<span class="text-amber-200">'/users'</span>);<br /><span
+                  class="text-slate-400"
+                  >// Laravel starter</span
+                >
+              </div>
+            </div>
+            <div class="p-5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-500">Laravel · Backend</span
+                ><span
+                  class="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-semibold text-violet-700"
+                  >PWYW</span
+                >
+              </div>
+              <h3 class="mt-3 text-lg font-bold">Laravel REST API Starter</h3>
+              <p class="mt-2 text-sm leading-6 text-slate-500">
+                Struktur awal REST API dengan authentication, validation, dan
+                response format.
+              </p>
+              <div
+                class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4"
+              >
+                <span class="text-xs text-slate-500">ZIP · Documentation</span
+                ><span class="text-sm font-bold text-emerald-600">Rp0+</span>
+              </div>
+            </div>
+          </article>
+          <article
+            class="product-card overflow-hidden rounded-2xl border border-slate-200 bg-white"
+          >
+            <div
+              class="flex h-44 items-center justify-center bg-gradient-to-br from-blue-700 to-indigo-900"
+            >
+              <div
+                class="w-64 rounded-xl border border-white/20 bg-white/10 p-4 text-white shadow-2xl"
+              >
+                <div class="flex gap-1.5">
+                  <span class="h-2 w-2 rounded-full bg-rose-300"></span
+                  ><span class="h-2 w-2 rounded-full bg-amber-300"></span
+                  ><span class="h-2 w-2 rounded-full bg-emerald-300"></span>
+                </div>
+                <div class="mt-5 grid grid-cols-3 gap-2">
+                  <div class="h-12 rounded bg-white/15"></div>
+                  <div class="h-12 rounded bg-white/20"></div>
+                  <div class="h-12 rounded bg-white/10"></div>
+                </div>
+                <div class="mt-3 h-2 w-2/3 rounded bg-white/30"></div>
+              </div>
+            </div>
+            <div class="p-5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-500">Docker · DevOps</span
+                ><span
+                  class="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-semibold text-violet-700"
+                  >PWYW</span
+                >
+              </div>
+              <h3 class="mt-3 text-lg font-bold">Docker Compose Starter</h3>
+              <p class="mt-2 text-sm leading-6 text-slate-500">
+                Template environment development berisi aplikasi, PostgreSQL,
+                Redis, dan Nginx.
+              </p>
+              <div
+                class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4"
+              >
+                <span class="text-xs text-slate-500">ZIP · Setup guide</span
+                ><span class="text-sm font-bold text-emerald-600">Rp0+</span>
+              </div>
+            </div>
+          </article>
+          <article
+            class="product-card overflow-hidden rounded-2xl border border-slate-200 bg-white"
+          >
+            <div
+              class="flex h-44 items-center justify-center bg-gradient-to-br from-violet-700 to-fuchsia-900"
+            >
+              <div
+                class="w-64 rounded-xl border border-white/20 bg-white/10 p-4 text-white shadow-2xl"
+              >
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold">Dashboard UI</span
+                  ><span class="text-[10px] text-violet-200">Preview</span>
+                </div>
+                <div class="mt-4 flex gap-2">
+                  <div class="h-16 w-1/3 rounded-lg bg-white/20"></div>
+                  <div class="h-16 flex-1 rounded-lg bg-white/10"></div>
+                </div>
+                <div class="mt-3 h-2 w-3/4 rounded bg-white/20"></div>
+              </div>
+            </div>
+            <div class="p-5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-500">UI Kit · Tailwind CSS</span
+                ><span
+                  class="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-semibold text-violet-700"
+                  >PWYW</span
+                >
+              </div>
+              <h3 class="mt-3 text-lg font-bold">
+                Minimal Admin UI Components
+              </h3>
+              <p class="mt-2 text-sm leading-6 text-slate-500">
+                Kumpulan komponen UI sederhana untuk mempercepat pembuatan
+                dashboard.
+              </p>
+              <div
+                class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4"
+              >
+                <span class="text-xs text-slate-500">Source files</span
+                ><span class="text-sm font-bold text-emerald-600">Rp0+</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- Paid products -->
+      <section class="bg-slate-950 py-20 text-white">
+        <div class="mx-auto max-w-7xl px-5 lg:px-8">
+          <div
+            class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"
+          >
+            <div>
+              <p class="text-sm font-semibold text-indigo-300">
+                BUILT FOR DEVELOPERS
+              </p>
+              <h2 class="mt-2 text-3xl font-bold tracking-tight">
+                Tools untuk membangun lebih cepat
+              </h2>
+              <p class="mt-3 text-slate-400">
+                Source code premium yang siap dipelajari, digunakan, dan
+                dikembangkan.
+              </p>
+            </div>
+            <a
+              href="#"
+              class="text-sm font-semibold text-indigo-300 hover:text-white"
+              >Jelajahi produk premium →</a
+            >
+          </div>
+          <div class="mt-9 grid gap-6 md:grid-cols-2">
+            <article
+              class="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] transition hover:border-indigo-400/50"
+            >
+              <div class="grid sm:grid-cols-[.9fr_1.1fr]">
+                <div
+                  class="flex min-h-52 items-center justify-center bg-gradient-to-br from-indigo-700 to-blue-900 p-6"
+                >
+                  <div
+                    class="w-full max-w-xs rounded-xl border border-white/20 bg-slate-950/70 p-4 font-mono text-xs leading-6 text-indigo-200 shadow-2xl"
+                  >
+                    <span class="text-purple-300">class</span> SaaSStarter {<br />&nbsp;
+                    auth =
+                    <span class="text-emerald-300">true</span>;<br />&nbsp;
+                    billing =
+                    <span class="text-emerald-300">true</span>;<br />&nbsp;
+                    roles = <span class="text-emerald-300">true</span>;<br />}
+                  </div>
+                </div>
+                <div class="p-6">
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="rounded-full bg-indigo-400/15 px-2.5 py-1 text-[10px] font-semibold text-indigo-200"
+                      >PREMIUM SOURCE CODE</span
+                    >
+                  </div>
+                  <h3 class="mt-4 text-xl font-bold">
+                    Laravel SaaS Starter Kit
+                  </h3>
+                  <p class="mt-2 text-sm leading-6 text-slate-400">
+                    Fondasi aplikasi SaaS dengan autentikasi, role management,
+                    billing structure, dan admin dashboard.
+                  </p>
+                  <div class="mt-6 flex items-center justify-between">
+                    <span class="text-xl font-bold">Rp249.000</span
+                    ><a
+                      href="#"
+                      class="rounded-lg bg-white px-4 py-2.5 text-xs font-bold text-slate-900 transition hover:bg-indigo-100"
+                      >Lihat produk →</a
+                    >
+                  </div>
+                </div>
+              </div>
+            </article>
+            <article
+              class="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] transition hover:border-indigo-400/50"
+            >
+              <div class="grid sm:grid-cols-[.9fr_1.1fr]">
+                <div
+                  class="flex min-h-52 items-center justify-center bg-gradient-to-br from-cyan-700 to-slate-900 p-6"
+                >
+                  <div
+                    class="w-full max-w-xs rounded-xl border border-white/20 bg-slate-950/70 p-4 font-mono text-xs leading-6 text-cyan-200 shadow-2xl"
+                  >
+                    <span class="text-purple-300">services:</span><br />&nbsp;
+                    app:<br />&nbsp;&nbsp; build: .<br />&nbsp; postgres:<br />&nbsp;&nbsp;
+                    image: postgres<br />&nbsp; redis:<br />&nbsp;&nbsp; image:
+                    redis
+                  </div>
+                </div>
+                <div class="p-6">
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="rounded-full bg-indigo-400/15 px-2.5 py-1 text-[10px] font-semibold text-indigo-200"
+                      >PREMIUM SOURCE CODE</span
+                    >
+                  </div>
+                  <h3 class="mt-4 text-xl font-bold">
+                    Production Docker Blueprint
+                  </h3>
+                  <p class="mt-2 text-sm leading-6 text-slate-400">
+                    Template deployment dengan Docker, Nginx, PostgreSQL, Redis,
+                    health checks, dan CI/CD workflow.
+                  </p>
+                  <div class="mt-6 flex items-center justify-between">
+                    <span class="text-xl font-bold">Rp179.000</span
+                    ><a
+                      href="#"
+                      class="rounded-lg bg-white px-4 py-2.5 text-xs font-bold text-slate-900 transition hover:bg-indigo-100"
+                      >Lihat produk →</a
+                    >
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Value proposition -->
+      <section id="about" class="mx-auto max-w-7xl px-5 py-20 lg:px-8">
+        <div class="mx-auto max-w-2xl text-center">
+          <p class="text-sm font-semibold text-brand-600">WHY DEVSPACE</p>
+          <h2 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+            Bukan cuma belajar. Saatnya membangun.
+          </h2>
+          <p class="mt-4 leading-7 text-slate-500">
+            Kami percaya pengetahuan teknologi seharusnya bisa diakses lebih
+            luas. Temukan ilmu, gunakan tools, lalu ciptakan sesuatu milikmu.
+          </p>
+        </div>
+        <div class="mt-12 grid gap-8 sm:grid-cols-3">
+          <div class="text-center">
+            <div
+              class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-2xl text-emerald-600"
+            >
+              ↗
+            </div>
+            <h3 class="mt-5 font-bold">Belajar dengan bebas</h3>
+            <p class="mt-2 text-sm leading-6 text-slate-500">
+              Akses materi gratis dan pilih kelas premium sesuai kebutuhanmu.
+            </p>
+          </div>
+          <div class="text-center">
+            <div
+              class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-50 text-2xl text-brand-600"
+            >
+              ⌘
+            </div>
+            <h3 class="mt-5 font-bold">Bangun dengan tools nyata</h3>
+            <p class="mt-2 text-sm leading-6 text-slate-500">
+              Gunakan source code dan starter kit untuk mempercepat project.
+            </p>
+          </div>
+          <div class="text-center">
+            <div
+              class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-2xl text-amber-600"
+            >
+              ♡
+            </div>
+            <h3 class="mt-5 font-bold">Dukung budaya berbagi</h3>
+            <p class="mt-2 text-sm leading-6 text-slate-500">
+              Dukung kreator jika karya mereka membantumu berkembang.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- CTA -->
+      <section class="px-5 pb-20">
+        <div
+          class="relative mx-auto max-w-7xl overflow-hidden rounded-3xl bg-brand-600 px-6 py-14 text-center text-white sm:px-12"
+        >
+          <div
+            class="absolute -left-20 -top-24 h-64 w-64 rounded-full border-[40px] border-white/5"
+          ></div>
+          <div
+            class="absolute -bottom-32 -right-10 h-80 w-80 rounded-full border-[50px] border-white/5"
+          ></div>
+          <div class="relative">
+            <p class="text-sm font-semibold text-indigo-200">
+              YOUR NEXT STEP STARTS HERE
+            </p>
+            <h2
+              class="mx-auto mt-3 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl"
+            >
+              Punya sesuatu untuk dipelajari dan dibangun?
+            </h2>
+            <p class="mx-auto mt-4 max-w-xl text-sm leading-7 text-indigo-100">
+              Gabung dengan ruang belajar dan berkarya untuk developer. Mulai
+              perjalananmu hari ini.
+            </p>
+            <a
+              href="#"
+              class="mt-8 inline-flex items-center gap-2 rounded-xl bg-white px-6 py-3.5 text-sm font-bold text-brand-700 transition hover:bg-indigo-50"
+              >Bergabung gratis <span>→</span></a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 bg-white">
+      <div
+        class="mx-auto grid max-w-7xl gap-10 px-5 py-12 sm:grid-cols-2 lg:grid-cols-4 lg:px-8"
+      >
+        <div class="sm:col-span-2">
+          <a href="#" class="inline-flex items-center gap-2.5"
+            ><span
+              class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-white"
+              >⌘</span
+            ><span class="text-lg font-extrabold tracking-tight"
+              >dev<span class="text-brand-600">space</span></span
+            ></a
+          >
+          <p class="mt-4 max-w-sm text-sm leading-7 text-slate-500">
+            Ruang untuk belajar teknologi, menemukan tools, dan berbagi
+            pengetahuan. Learn. Build. Share.
+          </p>
+        </div>
+        <div>
+          <h4 class="text-sm font-bold">Explore</h4>
+          <ul class="mt-4 space-y-3 text-sm text-slate-500">
+            <li><a href="#courses" class="hover:text-brand-600">Kelas</a></li>
+            <li>
+              <a href="#products" class="hover:text-brand-600">Source Code</a>
+            </li>
+            <li>
+              <a href="#categories" class="hover:text-brand-600">Kategori</a>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="text-sm font-bold">Informasi</h4>
+          <ul class="mt-4 space-y-3 text-sm text-slate-500">
+            <li>
+              <a href="#about" class="hover:text-brand-600">Tentang Kami</a>
+            </li>
+            <li><a href="#" class="hover:text-brand-600">FAQ</a></li>
+            <li>
+              <a href="#" class="hover:text-brand-600">Lisensi & Ketentuan</a>
+            </li>
+            <li><a href="#" class="hover:text-brand-600">Kontak</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="border-t border-slate-100">
+        <div
+          class="mx-auto flex max-w-7xl flex-col gap-2 px-5 py-5 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between lg:px-8"
+        >
+          <span>© 2026 DevSpace. Built for curious minds.</span
+          ><span>Learn freely. Build creatively. Share knowledge.</span>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      const menuButton = document.getElementById("menuButton");
+      const mobileMenu = document.getElementById("mobileMenu");
+      menuButton.addEventListener("click", () =>
+        mobileMenu.classList.toggle("hidden"),
+      );
+
+      const filterButtons = document.querySelectorAll(".filter-btn");
+      const courseCards = document.querySelectorAll(".course-card");
+      filterButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const filter = button.dataset.filter;
+          filterButtons.forEach((item) => {
+            item.classList.remove("bg-brand-600", "text-white");
+            item.classList.add(
+              "border",
+              "border-slate-200",
+              "bg-white",
+              "text-slate-600",
+            );
+          });
+          button.classList.add("bg-brand-600", "text-white");
+          button.classList.remove(
+            "border",
+            "border-slate-200",
+            "bg-white",
+            "text-slate-600",
+          );
+          courseCards.forEach((card) => {
+            card.classList.toggle(
+              "hidden",
+              filter !== "all" && card.dataset.type !== filter,
+            );
+          });
+        });
+      });
+
+      document
+        .getElementById("searchForm")
+        .addEventListener("submit", (event) => {
+          event.preventDefault();
+          const query = document
+            .getElementById("searchInput")
+            .value.trim()
+            .toLowerCase();
+          const searchableCards = document.querySelectorAll(
+            ".course-card, #products article",
+          );
+          searchableCards.forEach((card) => {
+            const text = (
+              card.innerText +
+              " " +
+              (card.dataset.search || "")
+            ).toLowerCase();
+            card.classList.toggle("hidden", query && !text.includes(query));
+          });
+          document
+            .getElementById("courses")
+            .scrollIntoView({ behavior: "smooth" });
+        });
+    </script>
+  </body>
+</html>
