@@ -1,0 +1,3507 @@
+openapi: 3.1.0
+info:
+  title: Nekadaja API
+  version: 1.0.0
+  description: 'Kontrak REST API Nekadaja untuk frontend Next.js dan backend Go.
+
+    Spesifikasi ini mengikuti migrations PostgreSQL 000001–000012 yang diberikan.
+
+    Satu order hanya berisi satu produk (quantity selalu 1). Order gratis dibuat
+
+    langsung berstatus paid tanpa membuat payment. Produk berbayar menggunakan Midtrans.
+
+    '
+servers:
+- url: https://api.nekadaja.com/api/v1
+  description: Production
+- url: http://localhost:8080/api/v1
+  description: Local development
+tags:
+- name: Health
+- name: Authentication
+- name: Profile
+- name: Catalog
+- name: Courses
+- name: Lessons
+- name: Exams
+- name: Certificates
+- name: Source Code
+- name: Orders
+- name: Payments
+- name: Refunds
+- name: Entitlements
+- name: Admin - Catalog
+- name: Admin - Learning
+- name: Admin - Exams
+- name: Admin - Source Code
+- name: Admin - Commerce
+- name: Admin - Users
+- name: Admin - Certificates
+paths:
+  /health:
+    get:
+      tags:
+      - Health
+      summary: Health check
+      security: []
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /auth/register:
+    post:
+      tags:
+      - Authentication
+      summary: Register a student account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - name
+              - email
+              - password
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 150
+                email:
+                  type: string
+                  format: email
+                  maxLength: 255
+                password:
+                  type: string
+                  minLength: 8
+                  writeOnly: true
+      responses:
+        '201':
+          description: Account created; verification email queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /auth/login:
+    post:
+      tags:
+      - Authentication
+      summary: Login and issue access and refresh tokens
+      description: Refresh token must be delivered in a Secure, HttpOnly cookie. Never expose its raw value in application
+        logs.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - email
+              - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  writeOnly: true
+      responses:
+        '200':
+          description: Authenticated
+          headers:
+            Set-Cookie:
+              description: HttpOnly refresh-token cookie
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /auth/refresh:
+    post:
+      tags:
+      - Authentication
+      summary: Rotate refresh token and issue a new access token
+      security:
+      - RefreshCookie: []
+      responses:
+        '200':
+          description: Token rotated
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/logout:
+    post:
+      tags:
+      - Authentication
+      summary: Revoke current refresh token
+      security:
+      - RefreshCookie: []
+      responses:
+        '204':
+          description: Logged out and refresh cookie cleared
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /auth/verify-email:
+    post:
+      tags:
+      - Authentication
+      summary: Verify email address
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - token
+              properties:
+                token:
+                  type: string
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /auth/forgot-password:
+    post:
+      tags:
+      - Authentication
+      summary: Request password reset
+      description: Always return a generic response to avoid account enumeration.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - email
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '202':
+          $ref: '#/components/responses/Message'
+  /auth/reset-password:
+    post:
+      tags:
+      - Authentication
+      summary: Reset password using a one-time token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - token
+              - password
+              properties:
+                token:
+                  type: string
+                password:
+                  type: string
+                  minLength: 8
+                  writeOnly: true
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /me:
+    get:
+      tags:
+      - Profile
+      summary: Get current authenticated user
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Current user
+          content:
+            application/json:
+              schema:
+                allOf:
+                - $ref: '#/components/schemas/SuccessEnvelope'
+                - type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    patch:
+      tags:
+      - Profile
+      summary: Update current profile
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 2
+                  maxLength: 150
+                avatar_url:
+                  type:
+                  - string
+                  - 'null'
+                  format: uri
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /me/password:
+    put:
+      tags:
+      - Profile
+      summary: Change current password
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - current_password
+              - new_password
+              properties:
+                current_password:
+                  type: string
+                  writeOnly: true
+                new_password:
+                  type: string
+                  minLength: 8
+                  writeOnly: true
+      responses:
+        '204':
+          description: Password changed; other refresh tokens should be revoked
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /me/oauth/google:
+    post:
+      tags:
+      - Authentication
+      summary: Sign in or link account using Google identity token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - id_token
+              properties:
+                id_token:
+                  type: string
+                  writeOnly: true
+      responses:
+        '200':
+          description: Google authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /categories:
+    get:
+      tags:
+      - Catalog
+      summary: List product categories
+      security: []
+      parameters:
+      - in: query
+        name: product_type
+        schema:
+          $ref: '#/components/schemas/ProductType'
+      responses:
+        '200':
+          description: Category list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListResponse'
+  /products:
+    get:
+      tags:
+      - Catalog
+      summary: Browse published products
+      security: []
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/Limit'
+      - in: query
+        name: product_type
+        schema:
+          $ref: '#/components/schemas/ProductType'
+      - in: query
+        name: pricing_type
+        schema:
+          $ref: '#/components/schemas/PricingType'
+      - in: query
+        name: category
+        schema:
+          type: string
+      - in: query
+        name: search
+        schema:
+          type: string
+          maxLength: 100
+      - in: query
+        name: sort
+        schema:
+          type: string
+          enum:
+          - newest
+          - oldest
+          - price_asc
+          - price_desc
+          - title
+      responses:
+        '200':
+          description: Paginated products
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListResponse'
+  /products/{slug}:
+    get:
+      tags:
+      - Catalog
+      summary: Get published product detail
+      security:
+      - BearerAuth: []
+      - {}
+      parameters:
+      - $ref: '#/components/parameters/Slug'
+      responses:
+        '200':
+          description: Product detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /me/products:
+    get:
+      tags:
+      - Entitlements
+      summary: List products accessible by current user
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Owned products
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListResponse'
+  /me/entitlements:
+    get:
+      tags:
+      - Entitlements
+      summary: List current user's active and revoked entitlements
+      security:
+      - BearerAuth: []
+      parameters:
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - active
+          - revoked
+      responses:
+        '200':
+          description: Entitlements
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntitlementListResponse'
+  /products/{productId}/access:
+    get:
+      tags:
+      - Entitlements
+      summary: Check current user's access to a product
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ProductId'
+      responses:
+        '200':
+          description: Access result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessResponse'
+  /products/{productId}/claim:
+    post:
+      tags:
+      - Orders
+      summary: Claim a free product
+      description: Creates a zero-value paid order and its single order item, then grants entitlement in one database
+        transaction. No payment record or Midtrans checkout is created. Existing active access is returned idempotently.
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ProductId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '201':
+          description: Free product claimed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetailResponse'
+        '200':
+          description: Product was already claimed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetailResponse'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /courses/{slug}:
+    get:
+      tags:
+      - Courses
+      summary: Get course information and curriculum outline
+      security:
+      - BearerAuth: []
+      - {}
+      parameters:
+      - $ref: '#/components/parameters/Slug'
+      responses:
+        '200':
+          description: Course and section outline
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /courses/{courseId}/curriculum:
+    get:
+      tags:
+      - Courses
+      summary: Get course curriculum
+      security:
+      - BearerAuth: []
+      - {}
+      parameters:
+      - $ref: '#/components/parameters/CourseId'
+      responses:
+        '200':
+          description: Curriculum; private lesson content is omitted without entitlement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurriculumResponse'
+  /me/courses:
+    get:
+      tags:
+      - Courses
+      summary: List courses owned by current user with progress
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: My courses
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyCoursesResponse'
+  /lessons/{lessonId}:
+    get:
+      tags:
+      - Lessons
+      summary: Get lesson content
+      description: Require active product entitlement unless the lesson is marked is_preview. Do not expose unpublished
+        lessons.
+      security:
+      - BearerAuth: []
+      - {}
+      parameters:
+      - $ref: '#/components/parameters/LessonId'
+      responses:
+        '200':
+          description: Lesson content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /lessons/{lessonId}/progress:
+    put:
+      tags:
+      - Lessons
+      summary: Create or update lesson progress
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/LessonId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                last_position_seconds:
+                  type: integer
+                  minimum: 0
+                is_completed:
+                  type: boolean
+      responses:
+        '200':
+          description: Progress saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LessonProgressResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /courses/{courseId}/progress:
+    get:
+      tags:
+      - Courses
+      summary: Get current user's course progress
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/CourseId'
+      responses:
+        '200':
+          description: Course progress
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CourseProgressResponse'
+  /exams:
+    get:
+      tags:
+      - Exams
+      summary: List published exams available to current user
+      security:
+      - BearerAuth: []
+      parameters:
+      - in: query
+        name: course_id
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Exam list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamListResponse'
+  /exams/{examId}:
+    get:
+      tags:
+      - Exams
+      summary: Get exam instructions and questions
+      description: Never return is_correct or explanation fields before the attempt is submitted and graded.
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ExamId'
+      responses:
+        '200':
+          description: Exam detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamDetailResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /exams/{examId}/attempts:
+    post:
+      tags:
+      - Exams
+      summary: Start an exam attempt
+      description: Enforce entitlement, max_attempts, and one in-progress attempt per user and exam.
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ExamId'
+      responses:
+        '201':
+          description: Attempt started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamAttemptResponse'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /exam-attempts/{attemptId}:
+    get:
+      tags:
+      - Exams
+      summary: Get current exam attempt
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/AttemptId'
+      responses:
+        '200':
+          description: Attempt state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamAttemptResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /exam-attempts/{attemptId}/answers:
+    put:
+      tags:
+      - Exams
+      summary: Save an answer for a question
+      description: For single_choice and true_false, send selected_option_id. For multiple_choice, send selected_option_ids.
+        The server validates that every option belongs to the question and attempt.
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/AttemptId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - question_id
+              properties:
+                question_id:
+                  type: string
+                  format: uuid
+                selected_option_id:
+                  type:
+                  - string
+                  - 'null'
+                  format: uuid
+                selected_option_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /exam-attempts/{attemptId}/submit:
+    post:
+      tags:
+      - Exams
+      summary: Submit an exam attempt
+      description: Server closes the attempt, calculates score, determines pass status, and persists answers atomically.
+        Client-supplied score is never accepted.
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/AttemptId'
+      responses:
+        '200':
+          description: Submitted and graded result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamResultResponse'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /me/exam-attempts:
+    get:
+      tags:
+      - Exams
+      summary: List current user's exam history
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: Exam history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExamAttemptListResponse'
+  /me/certificates:
+    get:
+      tags:
+      - Certificates
+      summary: List current user's certificates
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Certificates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CertificateListResponse'
+  /certificates/verify/{certificateNumber}:
+    get:
+      tags:
+      - Certificates
+      summary: Public certificate verification
+      security: []
+      parameters:
+      - in: path
+        name: certificateNumber
+        required: true
+        schema:
+          type: string
+          maxLength: 100
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CertificateVerificationResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /source-codes/{slug}:
+    get:
+      tags:
+      - Source Code
+      summary: Get source code product details and release metadata
+      security:
+      - BearerAuth: []
+      - {}
+      parameters:
+      - $ref: '#/components/parameters/Slug'
+      responses:
+        '200':
+          description: Source code detail; private download URLs are never included here
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceCodeDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /source-codes/{sourceCodeId}/versions:
+    get:
+      tags:
+      - Source Code
+      summary: List published source code versions
+      security: []
+      parameters:
+      - in: path
+        name: sourceCodeId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Versions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceCodeVersionListResponse'
+  /source-codes/{sourceCodeId}/download:
+    post:
+      tags:
+      - Source Code
+      summary: Request a temporary download URL
+      description: Requires active entitlement. Return a short-lived signed URL for a private object-storage key
+        and record the download event in application logs/audit. Never accept storage_key from the client.
+      security:
+      - BearerAuth: []
+      parameters:
+      - in: path
+        name: sourceCodeId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                version_id:
+                  type: string
+                  format: uuid
+                file_id:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
+          description: Temporary download URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DownloadResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /orders:
+    post:
+      tags:
+      - Orders
+      summary: Create a paid order for one product
+      description: Exactly one product per order, quantity is always 1. Backend reads price and pricing rules from
+        PostgreSQL. For fixed pricing, client amount is ignored. For PWYW, amount is required and must be at least
+        minimum_amount. Free products must use the claim endpoint. Use Idempotency-Key to safely retry.
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - product_id
+              properties:
+                product_id:
+                  type: string
+                  format: uuid
+                amount:
+                  type: integer
+                  minimum: 1
+                  description: Required only for PWYW. IDR integer; never floating point.
+      responses:
+        '201':
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetailResponse'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /me/orders:
+    get:
+      tags:
+      - Orders
+      summary: List current user's orders
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/Limit'
+      - in: query
+        name: status
+        schema:
+          $ref: '#/components/schemas/OrderStatus'
+      responses:
+        '200':
+          description: Orders
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListResponse'
+  /orders/{orderNumber}:
+    get:
+      tags:
+      - Orders
+      summary: Get order detail owned by current user
+      security:
+      - BearerAuth: []
+      parameters:
+      - in: path
+        name: orderNumber
+        required: true
+        schema:
+          type: string
+          maxLength: 50
+      responses:
+        '200':
+          description: Order detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /orders/{orderId}/cancel:
+    post:
+      tags:
+      - Orders
+      summary: Cancel an unpaid order
+      security:
+      - BearerAuth: []
+      parameters:
+      - in: path
+        name: orderId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /orders/{orderId}/checkout:
+    post:
+      tags:
+      - Payments
+      summary: Create Midtrans checkout for an unpaid order
+      description: Creates or reuses a pending payment according to payment state rules. Amount and currency are
+        loaded from the order; client cannot override them.
+      security:
+      - BearerAuth: []
+      parameters:
+      - in: path
+        name: orderId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '201':
+          description: Checkout created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutResponse'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /payments/{paymentId}:
+    get:
+      tags:
+      - Payments
+      summary: Get payment status for an owned order
+      security:
+      - BearerAuth: []
+      parameters:
+      - in: path
+        name: paymentId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Payment detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /webhooks/midtrans:
+    post:
+      tags:
+      - Payments
+      summary: Receive Midtrans payment notification
+      description: Public provider callback. Verify signature_key using the server-side Midtrans server key, validate
+        order_id and gross_amount, persist event idempotently, then update payment/order and grant entitlement in
+        a database transaction. Never grant access based on browser redirect.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              required:
+              - order_id
+              - status_code
+              - gross_amount
+              - signature_key
+              properties:
+                order_id:
+                  type: string
+                status_code:
+                  type: string
+                gross_amount:
+                  type: string
+                signature_key:
+                  type: string
+                  writeOnly: true
+                transaction_id:
+                  type: string
+                transaction_status:
+                  type: string
+                payment_type:
+                  type: string
+                fraud_status:
+                  type: string
+      responses:
+        '200':
+          description: Notification accepted or already processed
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /me/refunds:
+    get:
+      tags:
+      - Refunds
+      summary: List current user's refund requests
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Refund list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefundListResponse'
+    post:
+      tags:
+      - Refunds
+      summary: Request a refund for a successful payment
+      description: Refund amount must be positive and total active/succeeded refunds must not exceed payment amount.
+        Access revocation policy is applied only after refund succeeds and is handled transactionally.
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - payment_id
+              - amount
+              properties:
+                payment_id:
+                  type: string
+                  format: uuid
+                amount:
+                  type: integer
+                  minimum: 1
+                reason:
+                  type: string
+                  maxLength: 5000
+      responses:
+        '201':
+          description: Refund requested
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefundResponse'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /me/refunds/{refundId}:
+    get:
+      tags:
+      - Refunds
+      summary: Get current user's refund request
+      security:
+      - BearerAuth: []
+      parameters:
+      - in: path
+        name: refundId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Refund detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefundResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /admin/products:
+    get:
+      tags:
+      - Admin - Catalog
+      summary: List products for administration
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/Limit'
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductList'
+    post:
+      tags:
+      - Admin - Catalog
+      summary: Create product and its typed detail record
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminProductCreate'
+      responses:
+        '201':
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductDetailResponse'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /admin/products/{productId}:
+    get:
+      tags:
+      - Admin - Catalog
+      summary: Get product including draft fields
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ProductId'
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductDetail'
+    patch:
+      tags:
+      - Admin - Catalog
+      summary: Update product
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ProductId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminProductUpdate'
+      responses:
+        '200':
+          $ref: '#/components/responses/ProductDetail'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /admin/products/{productId}/publish:
+    post:
+      tags:
+      - Admin - Catalog
+      summary: Publish product
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ProductId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /admin/products/{productId}/archive:
+    post:
+      tags:
+      - Admin - Catalog
+      summary: Archive product instead of hard deleting it
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ProductId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+  /admin/categories:
+    get:
+      tags:
+      - Admin - Catalog
+      summary: List categories
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CategoryList'
+    post:
+      tags:
+      - Admin - Catalog
+      summary: Create category
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - name
+              - slug
+              properties:
+                name:
+                  type: string
+                  maxLength: 100
+                slug:
+                  type: string
+                  maxLength: 120
+                description:
+                  type:
+                  - string
+                  - 'null'
+      responses:
+        '201':
+          $ref: '#/components/responses/Message'
+  /admin/categories/{categoryId}:
+    patch:
+      tags:
+      - Admin - Catalog
+      summary: Update category
+      security:
+      - BearerAuth: []
+      parameters:
+      - in: path
+        name: categoryId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  maxLength: 100
+                slug:
+                  type: string
+                  maxLength: 120
+                description:
+                  type:
+                  - string
+                  - 'null'
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+    delete:
+      tags:
+      - Admin - Catalog
+      summary: Delete category if it is no longer assigned
+      security:
+      - BearerAuth: []
+      parameters:
+      - in: path
+        name: categoryId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '204':
+          description: Category deleted
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /admin/courses/{courseId}/sections:
+    post:
+      tags:
+      - Admin - Learning
+      summary: Create course section
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/CourseId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - title
+              - position
+              properties:
+                title:
+                  type: string
+                  maxLength: 255
+                description:
+                  type:
+                  - string
+                  - 'null'
+                position:
+                  type: integer
+                  minimum: 0
+      responses:
+        '201':
+          $ref: '#/components/responses/Message'
+  /admin/sections/{sectionId}:
+    patch:
+      tags:
+      - Admin - Learning
+      summary: Update course section
+      security:
+      - BearerAuth: []
+      parameters:
+      - in: path
+        name: sectionId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  maxLength: 255
+                description:
+                  type:
+                  - string
+                  - 'null'
+                position:
+                  type: integer
+                  minimum: 0
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+    delete:
+      tags:
+      - Admin - Learning
+      summary: Delete section and its lessons
+      security:
+      - BearerAuth: []
+      parameters:
+      - in: path
+        name: sectionId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '204':
+          description: Section deleted
+  /admin/sections/{sectionId}/lessons:
+    post:
+      tags:
+      - Admin - Learning
+      summary: Create lesson
+      security:
+      - BearerAuth: []
+      parameters:
+      - in: path
+        name: sectionId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminLessonInput'
+      responses:
+        '201':
+          $ref: '#/components/responses/Message'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /admin/lessons/{lessonId}:
+    patch:
+      tags:
+      - Admin - Learning
+      summary: Update lesson
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/LessonId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminLessonUpdate'
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+    delete:
+      tags:
+      - Admin - Learning
+      summary: Delete lesson
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/LessonId'
+      responses:
+        '204':
+          description: Lesson deleted
+  /admin/lessons/{lessonId}/publish:
+    post:
+      tags:
+      - Admin - Learning
+      summary: Publish lesson after content validation
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/LessonId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /admin/courses/{courseId}/exams:
+    post:
+      tags:
+      - Admin - Exams
+      summary: Create exam
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/CourseId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminExamInput'
+      responses:
+        '201':
+          $ref: '#/components/responses/Message'
+  /admin/exams/{examId}:
+    patch:
+      tags:
+      - Admin - Exams
+      summary: Update exam settings
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ExamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminExamUpdate'
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+  /admin/exams/{examId}/publish:
+    post:
+      tags:
+      - Admin - Exams
+      summary: Publish exam
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ExamId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+  /admin/exams/{examId}/questions:
+    post:
+      tags:
+      - Admin - Exams
+      summary: Create exam question and answer options
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ExamId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminQuestionInput'
+      responses:
+        '201':
+          $ref: '#/components/responses/Message'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+  /admin/questions/{questionId}:
+    patch:
+      tags:
+      - Admin - Exams
+      summary: Update question and its options
+      security:
+      - BearerAuth: []
+      parameters:
+      - in: path
+        name: questionId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminQuestionInput'
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+    delete:
+      tags:
+      - Admin - Exams
+      summary: Delete question
+      security:
+      - BearerAuth: []
+      parameters:
+      - in: path
+        name: questionId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '204':
+          description: Question deleted
+  /admin/source-codes/{productId}:
+    put:
+      tags:
+      - Admin - Source Code
+      summary: Create or update source code product details
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ProductId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                programming_language:
+                  type:
+                  - string
+                  - 'null'
+                  maxLength: 100
+                framework:
+                  type:
+                  - string
+                  - 'null'
+                  maxLength: 100
+                documentation:
+                  type:
+                  - string
+                  - 'null'
+                installation_guide:
+                  type:
+                  - string
+                  - 'null'
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+  /admin/source-codes/{productId}/versions:
+    post:
+      tags:
+      - Admin - Source Code
+      summary: Create source code release version
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ProductId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - version
+              - released_at
+              properties:
+                version:
+                  type: string
+                  maxLength: 50
+                changelog:
+                  type:
+                  - string
+                  - 'null'
+                release_notes:
+                  type:
+                  - string
+                  - 'null'
+                is_latest:
+                  type: boolean
+                  default: false
+                released_at:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          $ref: '#/components/responses/Message'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /admin/source-codes/{productId}/files:
+    post:
+      tags:
+      - Admin - Source Code
+      summary: Upload a source code file
+      description: Upload binary to private object storage using a controlled upload flow; persist only metadata
+        and storage_key in PostgreSQL. The client must not choose storage_key.
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ProductId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+              - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                version_id:
+                  type: string
+                  format: uuid
+                is_primary:
+                  type: boolean
+                  default: false
+      responses:
+        '201':
+          $ref: '#/components/responses/Message'
+        '413':
+          description: File too large
+  /admin/users:
+    get:
+      tags:
+      - Admin - Users
+      summary: Search and list users
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/Limit'
+      - in: query
+        name: search
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - active
+          - inactive
+          - suspended
+      - in: query
+        name: role
+        schema:
+          type: string
+          enum:
+          - admin
+          - author
+          - student
+      responses:
+        '200':
+          description: Users
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+  /admin/users/{userId}/status:
+    patch:
+      tags:
+      - Admin - Users
+      summary: Change user status
+      security:
+      - BearerAuth: []
+      parameters:
+      - in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                  - active
+                  - inactive
+                  - suspended
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+  /admin/orders:
+    get:
+      tags:
+      - Admin - Commerce
+      summary: List all orders
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/Limit'
+      - in: query
+        name: status
+        schema:
+          $ref: '#/components/schemas/OrderStatus'
+      responses:
+        '200':
+          $ref: '#/components/responses/OrderList'
+  /admin/payments:
+    get:
+      tags:
+      - Admin - Commerce
+      summary: List payments
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/Limit'
+      - in: query
+        name: status
+        schema:
+          $ref: '#/components/schemas/PaymentStatus'
+      responses:
+        '200':
+          $ref: '#/components/responses/PaymentList'
+  /admin/refunds:
+    get:
+      tags:
+      - Admin - Commerce
+      summary: List refund requests
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/Limit'
+      - in: query
+        name: status
+        schema:
+          $ref: '#/components/schemas/RefundStatus'
+      responses:
+        '200':
+          $ref: '#/components/responses/RefundList'
+  /admin/refunds/{refundId}/approve:
+    post:
+      tags:
+      - Admin - Commerce
+      summary: Approve a refund request
+      security:
+      - BearerAuth: []
+      parameters:
+      - in: path
+        name: refundId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /admin/refunds/{refundId}/reject:
+    post:
+      tags:
+      - Admin - Commerce
+      summary: Reject a refund request
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - reason
+              properties:
+                reason:
+                  type: string
+                  minLength: 3
+                  maxLength: 2000
+      parameters:
+      - in: path
+        name: refundId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+  /admin/entitlements/{entitlementId}/revoke:
+    post:
+      tags:
+      - Entitlements
+      summary: Revoke an entitlement administratively
+      security:
+      - BearerAuth: []
+      parameters:
+      - in: path
+        name: entitlementId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - reason
+              properties:
+                reason:
+                  type: string
+                  minLength: 3
+                  maxLength: 2000
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /admin/certificate-templates:
+    get:
+      tags:
+      - Admin - Certificates
+      summary: List certificate templates
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: Certificate templates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CertificateTemplateListResponse'
+    post:
+      tags:
+      - Admin - Certificates
+      summary: Create certificate template
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - name
+              - template_file_url
+              properties:
+                name:
+                  type: string
+                  maxLength: 150
+                template_file_url:
+                  type: string
+                  format: uri
+                configuration:
+                  type: object
+                  additionalProperties: true
+                is_active:
+                  type: boolean
+                  default: true
+      responses:
+        '201':
+          $ref: '#/components/responses/Message'
+  /admin/courses/{courseId}/certificates/issue:
+    post:
+      tags:
+      - Admin - Certificates
+      summary: Issue certificate to a student
+      description: Validate course completion and applicable exam requirements in the application service before
+        inserting certificate.
+      security:
+      - BearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/CourseId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - user_id
+              - template_id
+              properties:
+                user_id:
+                  type: string
+                  format: uuid
+                template_id:
+                  type: string
+                  format: uuid
+      responses:
+        '201':
+          $ref: '#/components/responses/Message'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /admin/certificates/{certificateId}/revoke:
+    post:
+      tags:
+      - Admin - Certificates
+      summary: Revoke certificate
+      security:
+      - BearerAuth: []
+      parameters:
+      - in: path
+        name: certificateId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          $ref: '#/components/responses/Message'
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Short-lived access token. Do not store refresh token in JavaScript storage.
+    RefreshCookie:
+      type: apiKey
+      in: cookie
+      name: refresh_token
+      description: Opaque refresh token; server stores only token_hash in refresh_tokens.
+  parameters:
+    Page:
+      in: query
+      name: page
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    Limit:
+      in: query
+      name: limit
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    Slug:
+      in: path
+      name: slug
+      required: true
+      schema:
+        type: string
+        maxLength: 255
+    ProductId:
+      in: path
+      name: productId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    CourseId:
+      in: path
+      name: courseId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    LessonId:
+      in: path
+      name: lessonId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    ExamId:
+      in: path
+      name: examId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    AttemptId:
+      in: path
+      name: attemptId
+      required: true
+      schema:
+        type: string
+        format: uuid
+    IdempotencyKey:
+      in: header
+      name: Idempotency-Key
+      required: false
+      description: Client-generated UUID or opaque unique value. Backend must persist and replay the result for
+        a repeated key and same authenticated user/operation.
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+  schemas:
+    ProductType:
+      type: string
+      enum:
+      - course
+      - source_code
+    PricingType:
+      type: string
+      enum:
+      - free
+      - fixed
+      - pwyw
+    OrderStatus:
+      type: string
+      enum:
+      - pending_payment
+      - paid
+      - cancelled
+      - expired
+      - partially_refunded
+      - refunded
+    PaymentStatus:
+      type: string
+      enum:
+      - pending
+      - paid
+      - failed
+      - expired
+      - cancelled
+      - refunded
+      - partially_refunded
+    RefundStatus:
+      type: string
+      enum:
+      - requested
+      - approved
+      - rejected
+      - processing
+      - succeeded
+      - failed
+    Money:
+      type: integer
+      minimum: 0
+      description: Amount in the smallest IDR unit (whole rupiah); never use floating point.
+    PaginationMeta:
+      type: object
+      required:
+      - page
+      - limit
+      - total
+      - total_pages
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        total_pages:
+          type: integer
+    SuccessEnvelope:
+      type: object
+      required:
+      - success
+      - message
+      - data
+      properties:
+        success:
+          type: boolean
+          const: true
+        message:
+          type: string
+        data: {}
+        meta:
+          oneOf:
+          - type: object
+          - type: 'null'
+    ErrorEnvelope:
+      type: object
+      required:
+      - success
+      - message
+      properties:
+        success:
+          type: boolean
+          const: false
+        message:
+          type: string
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+        request_id:
+          type: string
+    MessageResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - ok
+        timestamp:
+          type: string
+          format: date-time
+    User:
+      type: object
+      required:
+      - id
+      - name
+      - email
+      - status
+      - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        avatar_url:
+          type:
+          - string
+          - 'null'
+          format: uri
+        status:
+          type: string
+          enum:
+          - active
+          - inactive
+          - suspended
+        email_verified_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        roles:
+          type: array
+          items:
+            type: string
+            enum:
+            - admin
+            - author
+            - student
+        created_at:
+          type: string
+          format: date-time
+    AuthResponse:
+      type: object
+      required:
+      - success
+      - message
+      - data
+      properties:
+        success:
+          type: boolean
+          const: true
+        message:
+          type: string
+        data:
+          type: object
+          required:
+          - access_token
+          - token_type
+          - expires_in
+          - user
+          properties:
+            access_token:
+              type: string
+            token_type:
+              type: string
+              const: Bearer
+            expires_in:
+              type: integer
+              description: Access token lifetime in seconds
+            user:
+              $ref: '#/components/schemas/User'
+    TokenResponse:
+      type: object
+      required:
+      - success
+      - message
+      - data
+      properties:
+        success:
+          type: boolean
+          const: true
+        message:
+          type: string
+        data:
+          type: object
+          required:
+          - access_token
+          - token_type
+          - expires_in
+          properties:
+            access_token:
+              type: string
+            token_type:
+              type: string
+              const: Bearer
+            expires_in:
+              type: integer
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type:
+          - string
+          - 'null'
+    Product:
+      type: object
+      required:
+      - id
+      - product_type
+      - title
+      - slug
+      - pricing_type
+      - price_amount
+      - minimum_amount
+      - currency
+      - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        product_type:
+          $ref: '#/components/schemas/ProductType'
+        title:
+          type: string
+        slug:
+          type: string
+        description:
+          type:
+          - string
+          - 'null'
+        thumbnail_url:
+          type:
+          - string
+          - 'null'
+          format: uri
+        pricing_type:
+          $ref: '#/components/schemas/PricingType'
+        price_amount:
+          $ref: '#/components/schemas/Money'
+        minimum_amount:
+          $ref: '#/components/schemas/Money'
+        currency:
+          type: string
+          const: IDR
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+        created_at:
+          type: string
+          format: date-time
+        published_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+    CourseSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        level:
+          type:
+          - string
+          - 'null'
+        language:
+          type: string
+        estimated_duration_minutes:
+          type:
+          - integer
+          - 'null'
+        requirements:
+          type: array
+          items:
+            type: string
+        learning_outcomes:
+          type: array
+          items:
+            type: string
+    CourseSection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type:
+          - string
+          - 'null'
+        position:
+          type: integer
+        lessons:
+          type: array
+          items:
+            $ref: '#/components/schemas/LessonSummary'
+    LessonSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        section_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        slug:
+          type: string
+        lesson_type:
+          type: string
+          enum:
+          - text
+          - video
+          - mixed
+        duration_seconds:
+          type:
+          - integer
+          - 'null'
+        is_preview:
+          type: boolean
+        position:
+          type: integer
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+    Lesson:
+      allOf:
+      - $ref: '#/components/schemas/LessonSummary'
+      - type: object
+        properties:
+          content:
+            type:
+            - string
+            - 'null'
+          video_url:
+            type:
+            - string
+            - 'null'
+            format: uri
+    SourceCodeVersion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        version:
+          type: string
+        changelog:
+          type:
+          - string
+          - 'null'
+        release_notes:
+          type:
+          - string
+          - 'null'
+        is_latest:
+          type: boolean
+        released_at:
+          type: string
+          format: date-time
+    SourceCodeDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        programming_language:
+          type:
+          - string
+          - 'null'
+        framework:
+          type:
+          - string
+          - 'null'
+        documentation:
+          type:
+          - string
+          - 'null'
+        installation_guide:
+          type:
+          - string
+          - 'null'
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SourceCodeVersion'
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        order_number:
+          type: string
+        subtotal_amount:
+          $ref: '#/components/schemas/Money'
+        discount_amount:
+          $ref: '#/components/schemas/Money'
+        total_amount:
+          $ref: '#/components/schemas/Money'
+        currency:
+          type: string
+          const: IDR
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        paid_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        expires_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        item:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            product_id:
+              type: string
+              format: uuid
+            product_title:
+              type: string
+            product_type:
+              $ref: '#/components/schemas/ProductType'
+            unit_price:
+              $ref: '#/components/schemas/Money'
+            quantity:
+              type: integer
+              const: 1
+            subtotal_amount:
+              $ref: '#/components/schemas/Money'
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        provider:
+          type: string
+          const: midtrans
+        provider_reference:
+          type:
+          - string
+          - 'null'
+        payment_method:
+          type:
+          - string
+          - 'null'
+        amount:
+          $ref: '#/components/schemas/Money'
+        currency:
+          type: string
+          const: IDR
+        status:
+          $ref: '#/components/schemas/PaymentStatus'
+        paid_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        expired_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+    Entitlement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        granted_at:
+          type: string
+          format: date-time
+        revoked_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        revoked_reason:
+          type:
+          - string
+          - 'null'
+        status:
+          type: string
+          enum:
+          - active
+          - revoked
+    Exam:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        course_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type:
+          - string
+          - 'null'
+        duration_minutes:
+          type: integer
+        passing_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        max_attempts:
+          type:
+          - integer
+          - 'null'
+        shuffle_questions:
+          type: boolean
+        shuffle_options:
+          type: boolean
+        status:
+          type: string
+          enum:
+          - draft
+          - published
+          - archived
+    ExamQuestionPublic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        question_text:
+          type: string
+        question_type:
+          type: string
+          enum:
+          - single_choice
+          - multiple_choice
+          - true_false
+        image_url:
+          type:
+          - string
+          - 'null'
+          format: uri
+        points:
+          type: number
+        position:
+          type: integer
+        options:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              option_text:
+                type:
+                - string
+                - 'null'
+              image_url:
+                type:
+                - string
+                - 'null'
+                format: uri
+              position:
+                type: integer
+    ExamAttempt:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        exam_id:
+          type: string
+          format: uuid
+        attempt_number:
+          type: integer
+        started_at:
+          type: string
+          format: date-time
+        submitted_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        score:
+          type:
+          - number
+          - 'null'
+        is_passed:
+          type:
+          - boolean
+          - 'null'
+        status:
+          type: string
+          enum:
+          - in_progress
+          - submitted
+          - graded
+          - expired
+    ExamResult:
+      allOf:
+      - $ref: '#/components/schemas/ExamAttempt'
+      - type: object
+        properties:
+          answers:
+            type: array
+            items:
+              type: object
+              properties:
+                question_id:
+                  type: string
+                  format: uuid
+                selected_option_ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                is_correct:
+                  type: boolean
+                earned_points:
+                  type: number
+                explanation:
+                  type:
+                  - string
+                  - 'null'
+    Certificate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        certificate_number:
+          type: string
+        course_id:
+          type: string
+          format: uuid
+        issued_at:
+          type: string
+          format: date-time
+        revoked_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+        file_url:
+          type:
+          - string
+          - 'null'
+          format: uri
+    Refund:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        refund_number:
+          type: string
+        payment_id:
+          type: string
+          format: uuid
+        amount:
+          $ref: '#/components/schemas/Money'
+        reason:
+          type:
+          - string
+          - 'null'
+        status:
+          $ref: '#/components/schemas/RefundStatus'
+        requested_at:
+          type: string
+          format: date-time
+        processed_at:
+          type:
+          - string
+          - 'null'
+          format: date-time
+    PageOfProducts:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+    AdminProductCreate:
+      type: object
+      required:
+      - product_type
+      - title
+      - slug
+      - pricing_type
+      properties:
+        product_type:
+          $ref: '#/components/schemas/ProductType'
+        title:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 255
+        description:
+          type:
+          - string
+          - 'null'
+        thumbnail_url:
+          type:
+          - string
+          - 'null'
+          format: uri
+        pricing_type:
+          $ref: '#/components/schemas/PricingType'
+        price_amount:
+          $ref: '#/components/schemas/Money'
+        minimum_amount:
+          $ref: '#/components/schemas/Money'
+        currency:
+          type: string
+          const: IDR
+          default: IDR
+        category_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        course:
+          type: object
+          description: Required when product_type is course
+          properties:
+            level:
+              type:
+              - string
+              - 'null'
+              maxLength: 30
+            language:
+              type: string
+              maxLength: 10
+              default: id
+            estimated_duration_minutes:
+              type:
+              - integer
+              - 'null'
+              minimum: 0
+            requirements:
+              type: array
+              items:
+                type: string
+            learning_outcomes:
+              type: array
+              items:
+                type: string
+        source_code:
+          type: object
+          description: Required when product_type is source_code
+          properties:
+            programming_language:
+              type:
+              - string
+              - 'null'
+              maxLength: 100
+            framework:
+              type:
+              - string
+              - 'null'
+              maxLength: 100
+            documentation:
+              type:
+              - string
+              - 'null'
+            installation_guide:
+              type:
+              - string
+              - 'null'
+    AdminProductUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 255
+        description:
+          type:
+          - string
+          - 'null'
+        thumbnail_url:
+          type:
+          - string
+          - 'null'
+          format: uri
+        pricing_type:
+          $ref: '#/components/schemas/PricingType'
+        price_amount:
+          $ref: '#/components/schemas/Money'
+        minimum_amount:
+          $ref: '#/components/schemas/Money'
+        category_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+    AdminLessonInput:
+      type: object
+      required:
+      - title
+      - slug
+      - lesson_type
+      - position
+      properties:
+        title:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 255
+        content:
+          type:
+          - string
+          - 'null'
+        lesson_type:
+          type: string
+          enum:
+          - text
+          - video
+          - mixed
+        video_url:
+          type:
+          - string
+          - 'null'
+          format: uri
+        duration_seconds:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+        is_preview:
+          type: boolean
+          default: false
+        position:
+          type: integer
+          minimum: 0
+    AdminLessonUpdate:
+      allOf:
+      - $ref: '#/components/schemas/AdminLessonInput'
+    AdminExamInput:
+      type: object
+      required:
+      - title
+      - duration_minutes
+      - passing_score
+      properties:
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type:
+          - string
+          - 'null'
+        duration_minutes:
+          type: integer
+          minimum: 1
+        passing_score:
+          type: number
+          minimum: 0
+          maximum: 100
+        max_attempts:
+          type:
+          - integer
+          - 'null'
+          minimum: 1
+        shuffle_questions:
+          type: boolean
+          default: false
+        shuffle_options:
+          type: boolean
+          default: false
+    AdminExamUpdate:
+      allOf:
+      - $ref: '#/components/schemas/AdminExamInput'
+    AdminQuestionInput:
+      type: object
+      required:
+      - question_text
+      - question_type
+      - points
+      - position
+      - options
+      properties:
+        question_text:
+          type: string
+        question_type:
+          type: string
+          enum:
+          - single_choice
+          - multiple_choice
+          - true_false
+        image_url:
+          type:
+          - string
+          - 'null'
+          format: uri
+        points:
+          type: number
+          exclusiveMinimum: 0
+          default: 1
+        explanation:
+          type:
+          - string
+          - 'null'
+        position:
+          type: integer
+          minimum: 0
+        options:
+          type: array
+          minItems: 2
+          items:
+            type: object
+            required:
+            - position
+            properties:
+              option_text:
+                type:
+                - string
+                - 'null'
+              image_url:
+                type:
+                - string
+                - 'null'
+                format: uri
+              is_correct:
+                type: boolean
+                default: false
+              position:
+                type: integer
+                minimum: 0
+    Download:
+      type: object
+      properties:
+        download_url:
+          type: string
+          format: uri
+        expires_at:
+          type: string
+          format: date-time
+        file_name:
+          type: string
+    ApiList:
+      type: object
+      properties:
+        items:
+          type: array
+          items: {}
+        pagination:
+          $ref: '#/components/schemas/PaginationMeta'
+    CategoryListResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: array
+            items:
+              $ref: '#/components/schemas/Category'
+    ProductListResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/PageOfProducts'
+    ProductDetailResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              product:
+                $ref: '#/components/schemas/Product'
+              course:
+                $ref: '#/components/schemas/CourseSummary'
+              source_code:
+                $ref: '#/components/schemas/SourceCodeDetail'
+    CourseDetailResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              product:
+                $ref: '#/components/schemas/Product'
+              course:
+                $ref: '#/components/schemas/CourseSummary'
+              sections:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CourseSection'
+    CurriculumResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              sections:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CourseSection'
+    LessonResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/Lesson'
+    LessonProgressResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              lesson_id:
+                type: string
+                format: uuid
+              is_completed:
+                type: boolean
+              last_position_seconds:
+                type: integer
+              completed_at:
+                type:
+                - string
+                - 'null'
+                format: date-time
+    CourseProgressResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              completed_lessons:
+                type: integer
+              total_lessons:
+                type: integer
+              progress_percentage:
+                type: number
+              completed_at:
+                type:
+                - string
+                - 'null'
+                format: date-time
+    MyCoursesResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: array
+            items:
+              type: object
+              additionalProperties: true
+    ExamListResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: array
+            items:
+              $ref: '#/components/schemas/Exam'
+    ExamDetailResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              exam:
+                $ref: '#/components/schemas/Exam'
+              questions:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExamQuestionPublic'
+    ExamAttemptResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/ExamAttempt'
+    ExamResultResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/ExamResult'
+    ExamAttemptListResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: array
+            items:
+              $ref: '#/components/schemas/ExamAttempt'
+          meta:
+            $ref: '#/components/schemas/PaginationMeta'
+    CertificateListResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: array
+            items:
+              $ref: '#/components/schemas/Certificate'
+    CertificateVerificationResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              valid:
+                type: boolean
+              certificate:
+                oneOf:
+                - $ref: '#/components/schemas/Certificate'
+                - type: 'null'
+              holder_name:
+                type:
+                - string
+                - 'null'
+              course_title:
+                type:
+                - string
+                - 'null'
+    SourceCodeDetailResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              product:
+                $ref: '#/components/schemas/Product'
+              source_code:
+                $ref: '#/components/schemas/SourceCodeDetail'
+    SourceCodeVersionListResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: array
+            items:
+              $ref: '#/components/schemas/SourceCodeVersion'
+    DownloadResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/Download'
+    OrderDetailResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/Order'
+    OrderListResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: array
+            items:
+              $ref: '#/components/schemas/Order'
+          meta:
+            $ref: '#/components/schemas/PaginationMeta'
+    CheckoutResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              payment:
+                $ref: '#/components/schemas/Payment'
+              checkout_url:
+                type: string
+                format: uri
+              token:
+                type: string
+                description: Midtrans Snap token if applicable
+    PaymentResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/Payment'
+    PaymentListResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: array
+            items:
+              $ref: '#/components/schemas/Payment'
+          meta:
+            $ref: '#/components/schemas/PaginationMeta'
+    RefundResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/Refund'
+    RefundListResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: array
+            items:
+              $ref: '#/components/schemas/Refund'
+          meta:
+            $ref: '#/components/schemas/PaginationMeta'
+    EntitlementListResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: array
+            items:
+              $ref: '#/components/schemas/Entitlement'
+    AccessResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              has_access:
+                type: boolean
+              entitlement:
+                oneOf:
+                - $ref: '#/components/schemas/Entitlement'
+                - type: 'null'
+    UserListResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: array
+            items:
+              $ref: '#/components/schemas/User'
+          meta:
+            $ref: '#/components/schemas/PaginationMeta'
+    CertificateTemplateListResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: array
+            items:
+              type: object
+              additionalProperties: true
+  responses:
+    Message:
+      description: Operation result
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MessageResponse'
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Unauthorized:
+      description: Authentication required or token invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Forbidden:
+      description: Authenticated but not permitted
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    Conflict:
+      description: Conflict with current resource state
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+    ProductList:
+      description: Product list
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProductListResponse'
+    ProductDetail:
+      description: Product detail
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProductDetailResponse'
+    CategoryList:
+      description: Category list
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CategoryListResponse'
+    OrderList:
+      description: Order list
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OrderListResponse'
+    PaymentList:
+      description: Payment list
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PaymentListResponse'
+    RefundList:
+      description: Refund list
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RefundListResponse'
